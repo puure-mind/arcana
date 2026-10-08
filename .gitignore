@@ -1,0 +1,12 @@
+node_modules
+.pnpm-store
+dist
+.turbo
+.vite
+.vite-temp
+*.log
+.DS_Store
+__pycache__
+*.pyc
+.venv
+*.tsbuildinfo

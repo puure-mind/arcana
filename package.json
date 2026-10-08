@@ -1,0 +1,20 @@
+{
+  "name": "grand-heist-workspace",
+  "private": true,
+  "packageManager": "pnpm@11.0.3",
+  "scripts": {
+    "build": "turbo run build",
+    "check": "turbo run check",
+    "format": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.8",
+    "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
