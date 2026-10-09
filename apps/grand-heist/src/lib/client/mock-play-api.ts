@@ -33,7 +33,8 @@ function nextMockRoundEvents(): readonly RoundEvent[] {
   const playableIds = MOCK_STATE_IDS.filter((id) => id !== 'ready');
   const id = playableIds[nextRoundIndex % playableIds.length] ?? 'loss';
   nextRoundIndex += 1;
-  console.debug("/api/play response:", MOCK_ROUNDS[id].events);
+  console.debug('/api/play response:', MOCK_ROUNDS[id].events);
+  console.debug('mock_rounds id:', id);
   return MOCK_ROUNDS[id].events;
 }
 
