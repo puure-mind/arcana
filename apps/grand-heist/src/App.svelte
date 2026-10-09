@@ -7,13 +7,17 @@
     type CellCoord,
     type LineWinRoundEvent,
     type MockVisualState,
+    type ReelGrid,
     type RevealRoundEvent,
     type SymbolId,
     type TotalWinRoundEvent,
+    type RoundEvent,
     type VerticalWildEvent
   } from '@grand-heist/contract';
+  import { tick } from 'svelte';
+  import { AnimationController, type WinTier } from './lib/animation-controller.js';
   import { createLocalGameClient } from './lib/client/local-game-client.js';
-  import { RoundPlayer, collectRoundEventTypes, delay } from './lib/round-player.js';
+  import { collectRoundEventTypes } from './lib/round-player.js';
   import {
     MOCK_ROUNDS,
     MOCK_STATE_IDS,
@@ -130,6 +134,7 @@
   const initialMockStateId = resolveInitialMockState();
   const showDevTools = searchParams.get('dev') === '1';
   const client = createLocalGameClient(initialMockStateId);
+  const animationController = new AnimationController();
 
   type DevRoundPlayerWindow = Window & {
     grandHeistRoundPlayer?: {
@@ -440,6 +445,13 @@
   let showMostWantedBonus = false;
   let showGambleBonus = false;
   let showBigScoreBonus = false;
+  let reelElements: HTMLElement[] = [];
+  let symbolElements: HTMLElement[][] = [];
+  let totalWinElement: HTMLElement | undefined;
+  let winScreenElement: HTMLElement | undefined;
+  let winScreenAmountElement: HTMLElement | undefined;
+  let winScreenLockedForAnimation = false;
+  let animatedWinScreen: WinScreen | null = null;
   let mostWantedFsLeft = 10;
   const bigScoreScreenFsLeft = 10;
 
@@ -461,7 +473,7 @@
   $: onboardingPage = onboardingPages[onboardingPageIndex];
   $: infoPage = infoPages[infoPageIndex];
   $: bonusBuyBet = bonusBuyBetValues[bonusBuyBetIndex];
-  $: activeWinScreen = winScreens[winScreenIndex];
+  $: activeWinScreen = animatedWinScreen ?? winScreens[winScreenIndex];
   $: {
     if (autoSpinEnabled && !isPlaying && !autoSpinTimer) {
       autoSpinTimer = setTimeout(() => {
@@ -499,6 +511,7 @@
 
     return () => {
       if (autoSpinTimer) clearTimeout(autoSpinTimer);
+      animationController.destroy();
       const devWindow = window as DevRoundPlayerWindow;
       if (devWindow.grandHeistRoundPlayer?.rounds === MOCK_ROUNDS) {
         delete devWindow.grandHeistRoundPlayer;
@@ -612,55 +625,74 @@
     activeLineWinAmountMinor = 0;
   }
 
+  function setReelElement(node: HTMLElement, index: number) {
+    reelElements[index] = node;
+    animationController.setTargets({ reels: reelElements });
+  }
+
+  function setSymbolElement(node: HTMLElement, coord: [number, number]) {
+    const [reel, row] = coord;
+    symbolElements[reel] ??= [];
+    symbolElements[reel][row] = node;
+    animationController.setTargets({ symbols: symbolElements });
+  }
+
+  function setTotalWinElement(node: HTMLElement) {
+    totalWinElement = node;
+    animationController.setTargets({ totalWin: totalWinElement });
+  }
+
+  function setWinScreenElement(node: HTMLElement) {
+    winScreenElement = node;
+    animationController.setTargets({ winScreen: winScreenElement });
+  }
+
+  function setWinScreenAmountElement(node: HTMLElement) {
+    winScreenAmountElement = node;
+    animationController.setTargets({ winScreenAmount: winScreenAmountElement });
+  }
+
   function patchState(patch: Partial<MockVisualState>) {
     state = { ...state, ...patch };
   }
 
-  const roundPlayer = new RoundPlayer({
-    async reveal(event, signal) {
-      const reveal = event as RevealRoundEvent;
-      patchState({
-        reels: reveal.reels,
-        highlightedCells: [],
-        scatterCells: [],
-        verticalWilds: [],
-        status: 'ready',
-        message: 'Spinning',
-        detail: 'Revealing the reels.',
-      });
-      displayedWinAmountMinor = 0;
-      activeLineWinAmountMinor = 0;
-      await delay(900, signal);
-      patchState({ reels: reveal.reels, message: 'Revealed', detail: 'Reels stopped.' });
-    },
-    async lineWin(event, signal) {
-      const lineWin = event as LineWinRoundEvent;
-      patchState({
-        highlightedCells: lineWin.cells,
-        status: 'lineWin',
-        message: 'Line Win',
-        detail: `Line ${lineWin.line} pays.`,
-      });
-      activeLineWinAmountMinor = lineWin.amount;
-      await delay(700, signal);
-      displayedWinAmountMinor = Math.max(displayedWinAmountMinor, lineWin.amount);
-    },
-    async totalWin(event, signal) {
-      const totalWin = event as TotalWinRoundEvent;
-      displayedWinAmountMinor = totalWin.amount;
-      patchState({
-        highlightedCells: [],
-        status: totalWin.amount > 0 ? 'lineWin' : 'loss',
-        message: totalWin.amount > 0 ? 'Total Win' : 'No Win',
-        detail: totalWin.amount > 0 ? 'Round payout counted.' : 'No winning combinations.',
-      });
-      await delay(500, signal);
-    },
-  });
+  function isRevealRoundEvent(event: RoundEvent): event is RevealRoundEvent {
+    return event.type === 'reveal' && 'reels' in event;
+  }
+
+  function isLineWinRoundEvent(event: RoundEvent): event is LineWinRoundEvent {
+    return event.type === 'lineWin' && 'cells' in event;
+  }
+
+  function isTotalWinRoundEvent(event: RoundEvent): event is TotalWinRoundEvent {
+    return event.type === 'totalWin' && typeof event.amount === 'number';
+  }
+
+  function revealEventFor(events: readonly RoundEvent[], fallback: ReelGrid): RevealRoundEvent {
+    return events.find(isRevealRoundEvent) ?? { type: 'reveal', reels: fallback };
+  }
+
+  function totalWinFor(events: readonly RoundEvent[]): number {
+    return [...events].reverse().find(isTotalWinRoundEvent)?.amount ?? 0;
+  }
+
+  function lineWinsFor(events: readonly RoundEvent[]): LineWinRoundEvent[] {
+    return events.filter(isLineWinRoundEvent);
+  }
+
+  function formatMinorWin(amount: number): string {
+    return winFormatter.format(amount / 100);
+  }
+
+  function winTierScreen(tier: WinTier, amount: number): WinScreen {
+    const titleImage = tier === 'big' ? bigWinTitleImage : tier === 'mega' ? megaWinTitleImage : epicWinTitleImage;
+    const label = tier === 'big' ? 'Big win' : tier === 'mega' ? 'Mega win' : 'Epic win';
+    return { kind: tier, titleImage, label, amount: formatMinorWin(amount) };
+  }
 
   function requestSkipCurrentRoundEvent() {
     if (!isPlaying) return;
-    roundPlayer.skipCurrentEvent();
+    animationController.skip();
   }
 
   function handleGlobalPointerDown(event: PointerEvent) {
@@ -679,12 +711,71 @@
     if (isPlaying) return;
 
     isPlaying = true;
+    displayedWinAmountMinor = 0;
+    activeLineWinAmountMinor = 0;
+    patchState({ highlightedCells: [], message: 'Spinning', detail: 'Waiting for reels.' });
+    animationController.startSpin();
     try {
       const round = await client.play({ betAmount: Math.round(state.totalBet * 100) });
-      await roundPlayer.play(round);
+      const reveal = revealEventFor(round.events, round.finalState.reels);
+      await animationController.stopSpin(() => {
+        patchState({
+          reels: reveal.reels,
+          highlightedCells: [],
+          scatterCells: [],
+          verticalWilds: [],
+          status: 'ready',
+          message: 'Revealed',
+          detail: 'Reels stopped.',
+        });
+      });
+
+      const lineWins = lineWinsFor(round.events);
+      const totalWin = totalWinFor(round.events);
+      const lineAnimation = animationController.playLineWins(lineWins, (lineWin) => {
+        if (!lineWin) {
+          patchState({ highlightedCells: round.finalState.highlightedCells });
+          activeLineWinAmountMinor = 0;
+          return;
+        }
+
+        patchState({
+          highlightedCells: lineWin.cells,
+          status: 'lineWin',
+          message: 'Line Win',
+          detail: `Line ${lineWin.line} pays.`,
+        });
+        activeLineWinAmountMinor = lineWin.amount;
+      });
+      const counterAnimation = animationController.countPanelWin(0, totalWin, (amount) => {
+        displayedWinAmountMinor = amount;
+      });
+      await Promise.all([lineAnimation, counterAnimation]);
+
       state = round.finalState;
-      displayedWinAmountMinor = Math.round(state.totalBet * state.winMultiplier * 100);
+      displayedWinAmountMinor = totalWin;
       activeLineWinAmountMinor = 0;
+
+      if (totalWin / 100 / state.totalBet >= 20) {
+        animatedWinScreen = winTierScreen('big', 0);
+        showWinScreen = true;
+        winScreenLockedForAnimation = true;
+        await tick();
+        await animationController.playBigWin({
+          amount: totalWin,
+          totalBet: state.totalBet,
+          formatAmount: formatMinorWin,
+          onAmount(amount) {
+            if (animatedWinScreen) animatedWinScreen = { ...animatedWinScreen, amount };
+          },
+          onTier(tier) {
+            animatedWinScreen = winTierScreen(tier, displayedWinAmountMinor);
+          },
+        });
+        showWinScreen = false;
+        winScreenLockedForAnimation = false;
+        animatedWinScreen = null;
+      }
     } finally {
       isPlaying = false;
     }
@@ -825,6 +916,11 @@
   }
 
   function advanceWinScreen() {
+    if (winScreenLockedForAnimation) {
+      animationController.skip();
+      return;
+    }
+
     if (winScreenIndex < winScreens.length - 1) {
       winScreenIndex += 1;
       return;
@@ -1485,7 +1581,7 @@
       >
         {#each state.reels as reel, reelIndex}
           {@const verticalWild = verticalWildFor(reelIndex)}
-          <div class="reel" role="presentation">
+          <div class="reel" role="presentation" use:setReelElement={reelIndex}>
             {#each reel as symbolId, rowIndex}
               {@const symbol = symbolFor(symbolId)}
               {@const wildCell = isVerticalWildCell(verticalWild, rowIndex)}
@@ -1501,6 +1597,7 @@
                 class:scatter-cue={isScatterCue(reelIndex, rowIndex)}
                 class:vertical-wild-cell={wildCell}
                 class={`symbol symbol-${symbol.category}`}
+                use:setSymbolElement={[reelIndex, rowIndex]}
                 role="gridcell"
                 aria-label={wildCell ? (verticalWild?.label ?? symbol.label) : symbol.label}
               >
@@ -1651,7 +1748,7 @@
       </div>
     </div>
 
-    <div class="total-win-panel">
+    <div class="total-win-panel" use:setTotalWinElement>
       <img src={totalWinBackgroundImage} alt="" draggable="false" />
       <div class="total-win-copy">
         <span>Total win</span>
@@ -2369,6 +2466,7 @@
       tabindex="0"
       onclick={advanceWinScreen}
       onkeydown={handleWinScreenKeydown}
+      use:setWinScreenElement
     >
       <img
         class="win-screen-dim"
@@ -2426,7 +2524,7 @@
             alt=""
             draggable="false"
           />
-          <div class="win-screen-amount">{activeWinScreen.amount}</div>
+          <div class="win-screen-amount" use:setWinScreenAmountElement>{activeWinScreen.amount}</div>
         </div>
       {/if}
     </section>

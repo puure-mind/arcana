@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@grand-heist/contract": "workspace:*",
+    "gsap": "^3.15.0",
     "svelte": "^5.43.14"
   },
   "devDependencies": {
