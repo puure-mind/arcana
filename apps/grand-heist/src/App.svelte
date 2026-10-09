@@ -5,12 +5,17 @@
     ROW_COUNT,
     SYMBOL_DEFINITIONS,
     type CellCoord,
+    type LineWinRoundEvent,
     type MockVisualState,
+    type RevealRoundEvent,
     type SymbolId,
+    type TotalWinRoundEvent,
     type VerticalWildEvent
   } from '@grand-heist/contract';
   import { createLocalGameClient } from './lib/client/local-game-client.js';
+  import { RoundPlayer, collectRoundEventTypes, delay } from './lib/round-player.js';
   import {
+    MOCK_ROUNDS,
     MOCK_STATE_IDS,
     MOCK_VISUAL_STATES,
     isMockStateId,
@@ -125,6 +130,13 @@
   const initialMockStateId = resolveInitialMockState();
   const showDevTools = searchParams.get('dev') === '1';
   const client = createLocalGameClient(initialMockStateId);
+
+  type DevRoundPlayerWindow = Window & {
+    grandHeistRoundPlayer?: {
+      rounds: typeof MOCK_ROUNDS;
+      play(roundId: MockStateId): Promise<string[]>;
+    };
+  };
 
   const symbolAssets: Record<string, string> = {
     car: carImage,
@@ -408,6 +420,9 @@
   let selectedMockStateId: MockStateId = initialMockStateId;
   let state: MockVisualState = client.getState();
   let isPlaying = false;
+  let autoSpinTimer: ReturnType<typeof setTimeout> | undefined;
+  let displayedWinAmountMinor = 0;
+  let activeLineWinAmountMinor = 0;
   let musicEnabled = true;
   let soundEnabled = true;
   let autoSpinEnabled = false;
@@ -447,6 +462,19 @@
   $: infoPage = infoPages[infoPageIndex];
   $: bonusBuyBet = bonusBuyBetValues[bonusBuyBetIndex];
   $: activeWinScreen = winScreens[winScreenIndex];
+  $: {
+    if (autoSpinEnabled && !isPlaying && !autoSpinTimer) {
+      autoSpinTimer = setTimeout(() => {
+        autoSpinTimer = undefined;
+        if (autoSpinEnabled && !isPlaying) void playSelectedState();
+      }, 700);
+    }
+
+    if ((!autoSpinEnabled || isPlaying) && autoSpinTimer) {
+      clearTimeout(autoSpinTimer);
+      autoSpinTimer = undefined;
+    }
+  }
 
 
   onMount(() => {
@@ -459,7 +487,22 @@
     updateLayout();
     media.addEventListener('change', updateLayout);
 
+    if (showDevTools) {
+      const devWindow = window as DevRoundPlayerWindow;
+      devWindow.grandHeistRoundPlayer = {
+        rounds: MOCK_ROUNDS,
+        play(roundId: MockStateId) {
+          return collectRoundEventTypes(MOCK_ROUNDS[roundId]);
+        },
+      };
+    }
+
     return () => {
+      if (autoSpinTimer) clearTimeout(autoSpinTimer);
+      const devWindow = window as DevRoundPlayerWindow;
+      if (devWindow.grandHeistRoundPlayer?.rounds === MOCK_ROUNDS) {
+        delete devWindow.grandHeistRoundPlayer;
+      }
       media.removeEventListener('change', updateLayout);
     };
   });
@@ -469,7 +512,7 @@
     currency: state.currency,
     minimumFractionDigits: 2
   });
-  $: winAmount = state.totalBet * state.winMultiplier;
+  $: winAmount = displayedWinAmountMinor / 100;
   $: winFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: state.currency,
@@ -560,9 +603,76 @@
   }
 
   function selectMockState(event: Event) {
+    if (isPlaying) return;
+
     const target = event.currentTarget as HTMLSelectElement;
     selectedMockStateId = isMockStateId(target.value) ? target.value : 'ready';
     state = client.selectState(selectedMockStateId);
+    displayedWinAmountMinor = Math.round(state.totalBet * state.winMultiplier * 100);
+    activeLineWinAmountMinor = 0;
+  }
+
+  function patchState(patch: Partial<MockVisualState>) {
+    state = { ...state, ...patch };
+  }
+
+  const roundPlayer = new RoundPlayer({
+    async reveal(event, signal) {
+      const reveal = event as RevealRoundEvent;
+      patchState({
+        reels: reveal.reels,
+        highlightedCells: [],
+        scatterCells: [],
+        verticalWilds: [],
+        status: 'ready',
+        message: 'Spinning',
+        detail: 'Revealing the reels.',
+      });
+      displayedWinAmountMinor = 0;
+      activeLineWinAmountMinor = 0;
+      await delay(900, signal);
+      patchState({ reels: reveal.reels, message: 'Revealed', detail: 'Reels stopped.' });
+    },
+    async lineWin(event, signal) {
+      const lineWin = event as LineWinRoundEvent;
+      patchState({
+        highlightedCells: lineWin.cells,
+        status: 'lineWin',
+        message: 'Line Win',
+        detail: `Line ${lineWin.line} pays.`,
+      });
+      activeLineWinAmountMinor = lineWin.amount;
+      await delay(700, signal);
+      displayedWinAmountMinor = Math.max(displayedWinAmountMinor, lineWin.amount);
+    },
+    async totalWin(event, signal) {
+      const totalWin = event as TotalWinRoundEvent;
+      displayedWinAmountMinor = totalWin.amount;
+      patchState({
+        highlightedCells: [],
+        status: totalWin.amount > 0 ? 'lineWin' : 'loss',
+        message: totalWin.amount > 0 ? 'Total Win' : 'No Win',
+        detail: totalWin.amount > 0 ? 'Round payout counted.' : 'No winning combinations.',
+      });
+      await delay(500, signal);
+    },
+  });
+
+  function requestSkipCurrentRoundEvent() {
+    if (!isPlaying) return;
+    roundPlayer.skipCurrentEvent();
+  }
+
+  function handleGlobalPointerDown(event: PointerEvent) {
+    if (event.button !== 0) return;
+    requestSkipCurrentRoundEvent();
+  }
+
+  function handleGlobalKeydown(event: KeyboardEvent) {
+    if (event.code !== 'Space' || !isPlaying) return;
+
+    event.preventDefault();
+    requestSkipCurrentRoundEvent();
   }
 
   async function playSelectedState() {
@@ -570,7 +680,11 @@
 
     isPlaying = true;
     try {
-      state = await client.play({ mockStateId: selectedMockStateId });
+      const round = await client.play({ betAmount: Math.round(state.totalBet * 100) });
+      await roundPlayer.play(round);
+      state = round.finalState;
+      displayedWinAmountMinor = Math.round(state.totalBet * state.winMultiplier * 100);
+      activeLineWinAmountMinor = 0;
     } finally {
       isPlaying = false;
     }
@@ -841,6 +955,8 @@
     showOnboarding ? ' onboarding-active' : ''
   }${showMostWantedBonus ? ' most-wanted-bonus-active' : ''}${showGambleBonus ? ' gamble-bonus-active' : ''}`}
   data-status={state.status}
+  onpointerdown={handleGlobalPointerDown}
+  onkeydown={handleGlobalKeydown}
 >
   <img
     class="adaptive-background desktop-adaptive-background"

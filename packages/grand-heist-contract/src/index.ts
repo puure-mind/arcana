@@ -132,6 +132,8 @@ export type CellCoord = {
 
 export type ReelGrid = readonly (readonly SymbolId[])[];
 
+export type MinorUnits = number;
+
 export type VisualScene = 'base' | 'freeSpins' | 'lockpick' | 'vault';
 
 export type VisualStateStatus =
@@ -171,7 +173,39 @@ export type MockVisualState = {
   detail: string;
 };
 
+export type RevealRoundEvent = {
+  type: 'reveal';
+  reels: ReelGrid;
+};
+
+export type LineWinRoundEvent = {
+  type: 'lineWin';
+  line: number;
+  symbol: SymbolId;
+  cells: readonly CellCoord[];
+  amount: MinorUnits;
+};
+
+export type TotalWinRoundEvent = {
+  type: 'totalWin';
+  amount: MinorUnits;
+};
+
+export type UnknownRoundEvent = {
+  type: string;
+  [key: string]: unknown;
+};
+
+export type RoundEvent = RevealRoundEvent | LineWinRoundEvent | TotalWinRoundEvent | UnknownRoundEvent;
+
+export type RoundResult = {
+  id: string;
+  events: readonly RoundEvent[];
+  finalState: MockVisualState;
+};
+
 export type LocalPlayRequest = {
+  betAmount: MinorUnits;
   mockStateId?: string;
 };
 
@@ -179,5 +213,5 @@ export type LocalGameClient = {
   readonly kind: 'local-mock';
   getState(): MockVisualState;
   selectState(id: string): MockVisualState;
-  play(request?: LocalPlayRequest): Promise<MockVisualState>;
+  play(request?: LocalPlayRequest): Promise<RoundResult>;
 };

@@ -1,4 +1,13 @@
-import type { CellCoord, MockVisualState, ReelGrid, VerticalWildEvent } from '@grand-heist/contract';
+import type {
+  CellCoord,
+  MinorUnits,
+  MockVisualState,
+  ReelGrid,
+  RoundEvent,
+  RoundResult,
+  SymbolId,
+  VerticalWildEvent,
+} from '@grand-heist/contract';
 
 const allRows = [0, 1, 2, 3, 4] as const;
 
@@ -299,6 +308,109 @@ export const MOCK_VISUAL_STATES = {
 } as const satisfies Record<string, MockVisualState>;
 
 export type MockStateId = keyof typeof MOCK_VISUAL_STATES;
+
+function majorToMinorUnits(amount: number): MinorUnits {
+  return Math.round(amount * 100);
+}
+
+function totalWinMinor(state: MockVisualState): MinorUnits {
+  return majorToMinorUnits(state.totalBet * state.winMultiplier);
+}
+
+function createRoundEvents(
+  state: MockVisualState,
+  lineWin?: { line: number; symbol: SymbolId; cells: readonly CellCoord[] },
+): RoundEvent[] {
+  const totalWin = totalWinMinor(state);
+  const events: RoundEvent[] = [{ type: 'reveal', reels: state.reels }];
+
+  if (lineWin && totalWin > 0) {
+    events.push({
+      type: 'lineWin',
+      line: lineWin.line,
+      symbol: lineWin.symbol,
+      cells: lineWin.cells,
+      amount: totalWin,
+    });
+  }
+
+  events.push({ type: 'totalWin', amount: totalWin });
+  return events;
+}
+
+export const MOCK_ROUNDS = {
+  ready: {
+    id: 'ready',
+    events: createRoundEvents(MOCK_VISUAL_STATES.ready),
+    finalState: MOCK_VISUAL_STATES.ready,
+  },
+  loss: {
+    id: 'loss',
+    events: createRoundEvents(MOCK_VISUAL_STATES.loss),
+    finalState: MOCK_VISUAL_STATES.loss,
+  },
+  lineWin: {
+    id: 'lineWin',
+    events: createRoundEvents(MOCK_VISUAL_STATES.lineWin, {
+      line: 1,
+      symbol: 'sportsCar',
+      cells: lineTop,
+    }),
+    finalState: MOCK_VISUAL_STATES.lineWin,
+  },
+  bigWin: {
+    id: 'bigWin',
+    events: createRoundEvents(MOCK_VISUAL_STATES.bigWin, {
+      line: 1,
+      symbol: 'cashStacks',
+      cells: fourOfKind,
+    }),
+    finalState: MOCK_VISUAL_STATES.bigWin,
+  },
+  scatterTrigger: {
+    id: 'scatterTrigger',
+    events: createRoundEvents(MOCK_VISUAL_STATES.scatterTrigger),
+    finalState: MOCK_VISUAL_STATES.scatterTrigger,
+  },
+  copChase: {
+    id: 'copChase',
+    events: createRoundEvents(MOCK_VISUAL_STATES.copChase),
+    finalState: MOCK_VISUAL_STATES.copChase,
+  },
+  gangChaseLevel1: {
+    id: 'gangChaseLevel1',
+    events: createRoundEvents(MOCK_VISUAL_STATES.gangChaseLevel1),
+    finalState: MOCK_VISUAL_STATES.gangChaseLevel1,
+  },
+  gangChaseLevel2: {
+    id: 'gangChaseLevel2',
+    events: createRoundEvents(MOCK_VISUAL_STATES.gangChaseLevel2),
+    finalState: MOCK_VISUAL_STATES.gangChaseLevel2,
+  },
+  gangChaseLevel3: {
+    id: 'gangChaseLevel3',
+    events: createRoundEvents(MOCK_VISUAL_STATES.gangChaseLevel3),
+    finalState: MOCK_VISUAL_STATES.gangChaseLevel3,
+  },
+  freeSpins: {
+    id: 'freeSpins',
+    events: createRoundEvents(MOCK_VISUAL_STATES.freeSpins, {
+      line: 2,
+      symbol: 'wild',
+      cells: MOCK_VISUAL_STATES.freeSpins.highlightedCells,
+    }),
+    finalState: MOCK_VISUAL_STATES.freeSpins,
+  },
+  vault: {
+    id: 'vault',
+    events: createRoundEvents(MOCK_VISUAL_STATES.vault, {
+      line: 5,
+      symbol: 'wild',
+      cells: MOCK_VISUAL_STATES.vault.highlightedCells,
+    }),
+    finalState: MOCK_VISUAL_STATES.vault,
+  },
+} as const satisfies Record<MockStateId, RoundResult>;
 
 export const MOCK_STATE_IDS = Object.keys(MOCK_VISUAL_STATES) as MockStateId[];
 
