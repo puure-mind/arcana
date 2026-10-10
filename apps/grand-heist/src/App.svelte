@@ -3,6 +3,7 @@
   import {
     REEL_COUNT,
     ROW_COUNT,
+    SYMBOL_IDS,
     SYMBOL_DEFINITIONS,
     type CellCoord,
     type LineWinRoundEvent,
@@ -135,6 +136,9 @@
   const showDevTools = searchParams.get('dev') === '1';
   const client = createLocalGameClient(initialMockStateId);
   const animationController = new AnimationController();
+  const REEL_BUFFER_TOP = 2;
+  const REEL_BUFFER_BOTTOM = 1;
+  const REEL_STRIP_LENGTH = REEL_BUFFER_TOP + ROW_COUNT + REEL_BUFFER_BOTTOM;
 
   type DevRoundPlayerWindow = Window & {
     grandHeistRoundPlayer?: {
@@ -424,6 +428,8 @@
 
   let selectedMockStateId: MockStateId = initialMockStateId;
   let state: MockVisualState = client.getState();
+  let animatedReels: SymbolId[][] = buildAnimatedReels(state.reels);
+  let useReferenceReadySymbols = selectedMockStateId === 'ready';
   let isPlaying = false;
   let autoSpinTimer: ReturnType<typeof setTimeout> | undefined;
   let displayedWinAmountMinor = 0;
@@ -574,6 +580,44 @@
     return SYMBOL_DEFINITIONS[symbolId];
   }
 
+  function symbolAt(seed: number): SymbolId {
+    return SYMBOL_IDS[((seed % SYMBOL_IDS.length) + SYMBOL_IDS.length) % SYMBOL_IDS.length];
+  }
+
+  function buildAnimatedReel(reel: readonly SymbolId[], reelIndex: number): SymbolId[] {
+    const top = Array.from({ length: REEL_BUFFER_TOP }, (_, index) => symbolAt(reelIndex * 7 + index));
+    const bottom = Array.from({ length: REEL_BUFFER_BOTTOM }, (_, index) => symbolAt(reelIndex * 7 + reel.length + index));
+
+    return [...top, ...reel, ...bottom].slice(0, REEL_STRIP_LENGTH);
+  }
+
+  function buildAnimatedReels(reels: ReelGrid): SymbolId[][] {
+    return reels.map((reel, reelIndex) => buildAnimatedReel(reel, reelIndex));
+  }
+
+  function visibleRowForStripIndex(stripIndex: number): number | null {
+    const row = stripIndex - REEL_BUFFER_TOP;
+    return row >= 0 && row < ROW_COUNT ? row : null;
+  }
+
+  function rotateReelSymbols(reelIndex: number) {
+    const reel = animatedReels[reelIndex];
+    if (!reel) return;
+
+    const [first, ...rest] = reel;
+    animatedReels = animatedReels.map((current, index) => (index === reelIndex ? [...rest, first] : current));
+  }
+
+  function prepareRevealReel(reelIndex: number, reel: readonly SymbolId[]) {
+    animatedReels = animatedReels.map((current, index) => {
+      if (index !== reelIndex) return current;
+
+      const top = Array.from({ length: REEL_BUFFER_TOP }, (_, topIndex) => symbolAt(reelIndex * 11 + topIndex));
+      const bottom = current.slice(-REEL_BUFFER_BOTTOM);
+      return [...top, ...reel, ...bottom].slice(0, REEL_STRIP_LENGTH);
+    });
+  }
+
   function normalizeAssetKey(value: unknown): string {
     return String(value ?? '')
       .toLowerCase()
@@ -602,7 +646,7 @@
     reel: number,
     row: number
   ): string | undefined {
-    if (selectedMockStateId === 'ready') {
+    if (useReferenceReadySymbols) {
       const referenceSymbols = isMobileLayout ? referenceMobileSymbols : referenceReadySymbols;
       return referenceSymbols[reel]?.[row];
     }
@@ -621,6 +665,8 @@
     const target = event.currentTarget as HTMLSelectElement;
     selectedMockStateId = isMockStateId(target.value) ? target.value : 'ready';
     state = client.selectState(selectedMockStateId);
+    useReferenceReadySymbols = selectedMockStateId === 'ready';
+    animatedReels = buildAnimatedReels(state.reels);
     displayedWinAmountMinor = Math.round(state.totalBet * state.winMultiplier * 100);
     activeLineWinAmountMinor = 0;
   }
@@ -635,6 +681,11 @@
     symbolElements[reel] ??= [];
     symbolElements[reel][row] = node;
     animationController.setTargets({ symbols: symbolElements });
+  }
+
+  function setVisibleSymbolElement(node: HTMLElement, coord: [number, number] | null) {
+    if (!coord) return;
+    setSymbolElement(node, coord);
   }
 
   function setTotalWinElement(node: HTMLElement) {
@@ -714,20 +765,26 @@
     displayedWinAmountMinor = 0;
     activeLineWinAmountMinor = 0;
     patchState({ highlightedCells: [], message: 'Spinning', detail: 'Waiting for reels.' });
-    animationController.startSpin();
+    animationController.startSpin({ onStep: rotateReelSymbols });
     try {
       const round = await client.play({ betAmount: Math.round(state.totalBet * 100) });
       const reveal = revealEventFor(round.events, round.finalState.reels);
-      await animationController.stopSpin(() => {
-        patchState({
-          reels: reveal.reels,
-          highlightedCells: [],
-          scatterCells: [],
-          verticalWilds: [],
-          status: 'ready',
-          message: 'Revealed',
-          detail: 'Reels stopped.',
-        });
+      await animationController.stopSpin({
+        reels: reveal.reels,
+        prepareReveal: prepareRevealReel,
+        commitReveal: () => {
+          patchState({
+            reels: reveal.reels,
+            highlightedCells: [],
+            scatterCells: [],
+            verticalWilds: [],
+            status: 'ready',
+            message: 'Revealed',
+            detail: 'Reels stopped.',
+          });
+          useReferenceReadySymbols = false;
+          animatedReels = buildAnimatedReels(reveal.reels);
+        },
       });
 
       const lineWins = lineWinsFor(round.events);
@@ -1579,44 +1636,49 @@
         role="grid"
         aria-label={`${REEL_COUNT} reels by ${ROW_COUNT} rows visual state`}
       >
-        {#each state.reels as reel, reelIndex}
+        {#each animatedReels as reel, reelIndex}
           {@const verticalWild = verticalWildFor(reelIndex)}
-          <div class="reel" role="presentation" use:setReelElement={reelIndex}>
-            {#each reel as symbolId, rowIndex}
-              {@const symbol = symbolFor(symbolId)}
-              {@const wildCell = isVerticalWildCell(verticalWild, rowIndex)}
-              {@const symbolImage = visualSymbolImageFor(
-                symbolId,
-                symbol.label,
-                symbol.shortLabel,
-                reelIndex,
-                rowIndex
-              )}
-              <div
-                class:highlighted={isHighlighted(reelIndex, rowIndex)}
-                class:scatter-cue={isScatterCue(reelIndex, rowIndex)}
-                class:vertical-wild-cell={wildCell}
-                class={`symbol symbol-${symbol.category}`}
-                use:setSymbolElement={[reelIndex, rowIndex]}
-                role="gridcell"
-                aria-label={wildCell ? (verticalWild?.label ?? symbol.label) : symbol.label}
-              >
-                <div class="symbol-glow" aria-hidden="true"></div>
+          <div class="reel-window" role="presentation">
+            <div class="reel-strip" use:setReelElement={reelIndex}>
+              {#each reel as symbolId, stripIndex}
+                {@const symbol = symbolFor(symbolId)}
+                {@const rowIndex = visibleRowForStripIndex(stripIndex)}
+                {@const isVisibleCell = rowIndex !== null}
+                {@const wildCell = isVisibleCell && isVerticalWildCell(verticalWild, rowIndex)}
+                {@const symbolImage = visualSymbolImageFor(
+                  symbolId,
+                  symbol.label,
+                  symbol.shortLabel,
+                  reelIndex,
+                  rowIndex ?? 0
+                )}
+                <div
+                  class:hidden-buffer={!isVisibleCell}
+                  class:highlighted={isVisibleCell && isHighlighted(reelIndex, rowIndex)}
+                  class:scatter-cue={isVisibleCell && isScatterCue(reelIndex, rowIndex)}
+                  class:vertical-wild-cell={wildCell}
+                  class={`symbol symbol-${symbol.category}`}
+                  use:setVisibleSymbolElement={isVisibleCell ? [reelIndex, rowIndex] : null}
+                  role="gridcell"
+                  aria-label={wildCell ? (verticalWild?.label ?? symbol.label) : symbol.label}
+                >
+                  <div class="symbol-glow" aria-hidden="true"></div>
 
-                {#if wildCell}
-                  <img
-                    class="symbol-image chase-symbol"
-                    src={chaseImageFor(verticalWild)}
-                    alt=""
-                    draggable="false"
-                  />
-                {:else if symbolImage}
-                  <img class="symbol-image" src={symbolImage} alt="" draggable="false" />
-                {:else}
-                  <span class="symbol-fallback">{symbol.shortLabel}</span>
-                {/if}
-              </div>
-            {/each}
+                  {#if wildCell}
+                    <img
+                      class="symbol-image chase-symbol"
+                      src={chaseImageFor(verticalWild)}
+                      alt=""
+                      draggable="false"
+                    />
+                  {:else if symbolImage}
+                    <img class="symbol-image" src={symbolImage} alt="" draggable="false" />
+                  {:else}
+                    <span class="symbol-fallback">{symbol.shortLabel}</span>
+                  {/if}
+                </div>
+              {/each}
+            </div>
           </div>
         {/each}
       </div>
@@ -2953,16 +3015,27 @@
     box-shadow: none !important;
   }
 
-  .reel {
+  .reel-window {
     position: relative;
-    display: grid;
-    grid-template-rows: repeat(5, minmax(0, 1fr));
-    gap: 0;
     min-width: 0;
     min-height: 0;
+    overflow: hidden;
     background: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
+  }
+
+  .reel-strip {
+    position: absolute;
+    inset: 0 0 auto;
+    height: calc((100% / 5) * 8);
+    display: grid;
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+    gap: 0;
+    min-width: 0;
+    min-height: 0;
+    transform: translateY(calc((-100% / 8) * 2));
+    will-change: transform, filter;
   }
 
   .slot-columns {

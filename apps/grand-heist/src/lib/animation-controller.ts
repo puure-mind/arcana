@@ -1,5 +1,5 @@
 import { gsap } from 'gsap';
-import type { CellCoord, LineWinRoundEvent, ReelGrid } from '@grand-heist/contract';
+import type { CellCoord, LineWinRoundEvent, ReelGrid, SymbolId } from '@grand-heist/contract';
 
 export type WinTier = 'big' | 'mega' | 'epic';
 
@@ -17,6 +17,16 @@ export type BigWinOptions = {
   formatAmount(amount: number): string;
   onAmount(amount: string): void;
   onTier(tier: WinTier): void;
+};
+
+export type StartSpinOptions = {
+  onStep(reelIndex: number): void;
+};
+
+export type StopSpinOptions = {
+  reels: ReelGrid;
+  prepareReveal(reelIndex: number, reel: readonly SymbolId[]): void;
+  commitReveal(): void;
 };
 
 const MIN_SPIN_MS = 900;
@@ -37,6 +47,7 @@ export class AnimationController {
   private targets: AnimationControllerTargets = { reels: [], symbols: [] };
   private timelines: gsap.core.Timeline[] = [];
   private spinStartedAt = 0;
+  private spinLoops: gsap.core.Timeline[] = [];
   private skipCurrent: (() => void) | null = null;
   private bigWinSkip: (() => void) | null = null;
 
@@ -44,37 +55,56 @@ export class AnimationController {
     this.targets = { ...this.targets, ...targets };
   }
 
-  startSpin(): void {
+  startSpin(options: StartSpinOptions): void {
     this.killActive();
     this.spinStartedAt = performance.now();
 
     this.targets.reels.forEach((reel, index) => {
-      const timeline = gsap.timeline({ delay: index * START_STAGGER, repeat: -1 });
+      const step = this.reelStep(reel);
+      const baseY = -step * 2;
+      gsap.set(reel, { y: baseY, filter: 'blur(0px)' });
+
+      const timeline = gsap.timeline({ delay: index * START_STAGGER });
       timeline
-        .to(reel, { y: -10, duration: 0.12, ease: 'power2.out' })
-        .to(reel, { y: 36, filter: 'blur(0 10px)', duration: 0.18, ease: 'none' })
-        .set(reel, { y: -36 })
-        .to(reel, { y: 36, filter: 'blur(0 10px)', duration: 0.24, ease: 'none' });
+        .to(reel, { y: baseY - 8, duration: 0.12, ease: 'power2.out' })
+        .add(() => {
+          const loop = gsap.timeline({ repeat: -1 });
+          loop.to(reel, {
+            y: baseY + step,
+            filter: 'blur(8px)',
+            duration: 0.18,
+            ease: 'none',
+            onComplete: () => {
+              options.onStep(index);
+              gsap.set(reel, { y: baseY });
+            },
+          });
+          this.spinLoops.push(loop);
+          this.timelines.push(loop);
+        });
       this.timelines.push(timeline);
     });
   }
 
-  async stopSpin(onReveal: () => void): Promise<void> {
+  async stopSpin(options: StopSpinOptions): Promise<void> {
     await wait(Math.max(0, MIN_SPIN_MS - (performance.now() - this.spinStartedAt)));
     this.killActive();
-    onReveal();
 
     const timeline = gsap.timeline();
     this.targets.reels.forEach((reel, index) => {
+      const step = this.reelStep(reel);
+      const baseY = -step * 2;
+      options.prepareReveal(index, options.reels[index] ?? []);
+      gsap.set(reel, { y: baseY - step, filter: 'blur(8px)' });
       timeline.fromTo(
         reel,
-        { y: -24, filter: 'blur(0 8px)' },
-        { y: 0, filter: 'blur(0 0)', duration: 0.15, ease: 'back.out(1.8)' },
+        { y: baseY - step, filter: 'blur(8px)' },
+        { y: baseY + 10, filter: 'blur(0px)', duration: 0.38, ease: 'power2.out' },
         index * STOP_STAGGER,
       );
-      timeline.to(reel, { y: 10, duration: 0.08, ease: 'power1.out' }, index * STOP_STAGGER + 0.02);
-      timeline.to(reel, { y: 0, duration: 0.15, ease: 'back.out(1.8)' }, index * STOP_STAGGER + 0.1);
+      timeline.to(reel, { y: baseY, duration: 0.15, ease: 'back.out(1.8)' }, index * STOP_STAGGER + 0.38);
     });
+    timeline.add(options.commitReveal);
 
     this.timelines.push(timeline);
     await timelineDone(timeline);
@@ -203,11 +233,17 @@ export class AnimationController {
   private killActive(): void {
     this.timelines.forEach((timeline) => timeline.kill());
     this.timelines = [];
+    this.spinLoops = [];
     const symbols: HTMLElement[] = [];
     for (const reel of this.targets.symbols) {
       for (const symbol of reel) symbols.push(symbol);
     }
     gsap.set([...this.targets.reels, ...symbols], { clearProps: 'transform,filter' });
+  }
+
+  private reelStep(reel: HTMLElement): number {
+    const firstSymbol = reel.firstElementChild as HTMLElement | null;
+    return firstSymbol?.getBoundingClientRect().height || reel.getBoundingClientRect().height / 8;
   }
 
   private symbolsForCells(cells: readonly CellCoord[]): HTMLElement[] {
