@@ -1,0 +1,213 @@
+{
+    "reveal": {
+        "type": "reveal",
+        "board": [
+            [
+                {
+                    "name": "swords"
+                },
+                {
+                    "name": "cups"
+                },
+                {
+                    "name": "M100",
+                    "multiplier": 1
+                },
+                {
+                    "name": "Tower",
+                    "tower": true
+                },
+                {
+                    "name": "star"
+                },
+                {
+                    "name": "cups"
+                }
+            ],
+            [
+                {
+                    "name": "swords"
+                },
+                {
+                    "name": "cups"
+                },
+                {
+                    "name": "pentagram"
+                },
+                {
+                    "name": "wands"
+                },
+                {
+                    "name": "star"
+                },
+                {
+                    "name": "swords"
+                }
+            ],
+            [
+                {
+                    "name": "wands"
+                },
+                {
+                    "name": "pentagram"
+                },
+                {
+                    "name": "pentagram"
+                },
+                {
+                    "name": "pentagram"
+                },
+                {
+                    "name": "pentagram"
+                },
+                {
+                    "name": "swords"
+                }
+            ],
+            [
+                {
+                    "name": "swords"
+                },
+                {
+                    "name": "W",
+                    "wild": true
+                },
+                {
+                    "name": "wands"
+                },
+                {
+                    "name": "wands"
+                },
+                {
+                    "name": "cups"
+                },
+                {
+                    "name": "Tower",
+                    "tower": true
+                }
+            ],
+            [
+                {
+                    "name": "wands"
+                },
+                {
+                    "name": "cups"
+                },
+                {
+                    "name": "pentagram"
+                },
+                {
+                    "name": "pentagram"
+                },
+                {
+                    "name": "star"
+                },
+                {
+                    "name": "star"
+                }
+            ]
+        ],
+        "paddingPositions": [
+            17,
+            21,
+            0,
+            6,
+            23
+        ],
+        "gameType": "basegame",
+        "anticipation": [
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "winInfo": {
+        "type": "winInfo",
+        "totalWin": 2500,
+        "wins": [
+            {
+                "symbol": "pentagram",
+                "clusterSize": 6,
+                "win": 2500,
+                "positions": [
+                    {
+                        "reel": 1,
+                        "row": 2
+                    },
+                    {
+                        "reel": 2,
+                        "row": 1
+                    },
+                    {
+                        "reel": 2,
+                        "row": 2
+                    },
+                    {
+                        "reel": 2,
+                        "row": 3
+                    },
+                    {
+                        "reel": 2,
+                        "row": 4
+                    },
+                    {
+                        "reel": 3,
+                        "row": 1
+                    }
+                ],
+                "meta": {
+                    "globalMult": 1,
+                    "clusterMult": 100,
+                    "localMultiplier": 100,
+                    "adjacentMultipliers": [
+                        {
+                            "reel": 0,
+                            "row": 1,
+                            "symbol": "M100",
+                            "value": 100
+                        }
+                    ],
+                    "baseWin": 0.25,
+                    "winWithoutMult": 25,
+                    "winAfterLocalMultiplier": 25.0,
+                    "overlay": {
+                        "reel": 2,
+                        "row": 2
+                    }
+                }
+            }
+        ]
+    },
+    "arcanaSpinAward": {
+        "type": "arcanaSpinAward",
+        "amount": 2500
+    },
+    "finalWin": {
+        "type": "finalWin",
+        "amount": 2500
+    },
+    "arcanaBonus": {
+        "type": "arcanaBonus",
+        "prophecyReward": "freeSpins10",
+        "finalMultiplier": 1,
+        "sunFreeSpins": 0,
+        "prophecyFreeSpins": 10
+    },
+    "arcanaRiskPending": {
+        "type": "arcanaRiskPending",
+        "spinAward": 0.33,
+        "winningSide": "right",
+        "cards": [
+            {
+                "side": "left",
+                "wins": false
+            },
+            {
+                "side": "right",
+                "wins": true
+            }
+        ]
+    }
+}

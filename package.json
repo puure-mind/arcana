@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "assets": "assetpack",
+    "assets:watch": "assetpack --watch"
   },
   "dependencies": {
     "next": "16.4.0",
@@ -14,6 +16,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@assetpack/core": "^1.7.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -1,0 +1,48 @@
+{
+  "gameId": "arcana",
+  "mode": "base",
+  "generatedBy": "games/arcana/export_frontend.py",
+  "devRgsOnly": true,
+  "bookCount": 100000,
+  "lookupWeightModel": "uniform-sdk-weights",
+  "rtpFromBooks": 0.9598735,
+  "hitRateFromBooks": 0.22479,
+  "maxPayoutMultiplier": 410.97,
+  "riskModel": {
+    "type": "interactive-resolver",
+    "source": "book.events[].winningSide",
+    "browserRngAllowed": false
+  },
+  "files": {
+    "books/books_base.json": {
+      "bytes": 220812119,
+      "sha256": "19d8c340934038daa993f28995738bf5cb1e858ba3a6a54ce26fbf576338c98f"
+    },
+    "books_base.verification.json": {
+      "bytes": 165,
+      "sha256": "3ca63f1f90979cd1e4c3c8010a5d4ccf18a8e43f7093f54cc4deaa0d611759af"
+    },
+    "config_fe.json": {
+      "bytes": 8572,
+      "sha256": "3efb1c1b4835aa96f88eb7d942b49db94f6665dfea7dc4fdf296c1d1c82f71af"
+    },
+    "event_config_base.json": {
+      "bytes": 5191,
+      "sha256": "00d81aa88ad737368d971aa3a40921cf572d896a20266a358690ba2da0a5cb0f"
+    },
+    "lookup/lookUpTableSegmented_base.csv": {
+      "bytes": 1609133,
+      "sha256": "d709214bce7d69d577b5afadf044d601c394b46b1f3f70a7a52e1ab6ce169252",
+      "lines": 100000
+    },
+    "lookup/lookUpTable_base.csv": {
+      "bytes": 1019521,
+      "sha256": "57c18f99e359361d734c3ba37d208fba2bff0499e434127a60fff0f962070e0e",
+      "lines": 100000
+    },
+    "paytable.json": {
+      "bytes": 2122,
+      "sha256": "d6d4b8260434ef997081e3601df74a79b57e8dc8f07275c1af1b9cbd029850e9"
+    }
+  }
+}

@@ -20,6 +20,10 @@
 # production
 /build
 
+# assetpack
+/.assetpack/
+/public/assets/
+
 # misc
 .DS_Store
 *.pem

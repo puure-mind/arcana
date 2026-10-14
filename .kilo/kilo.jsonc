@@ -1,0 +1,19 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "Figma Desktop": {
+      "type": "remote",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "figma-remote": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "mcp-remote",
+        "https://mcp.figma.com/mcp"
+      ],
+      "enabled": true
+    }
+  }
+}
