@@ -34,8 +34,14 @@ Build a browser slot game from Figma using Next.js (App Router), TypeScript, Pix
 
 ```ts
 type Phase =
-  | 'booting' | 'idle' | 'requestingResult' | 'spinning'
-  | 'presentingWins' | 'recovering' | 'error' | 'disposed';
+  | "booting"
+  | "idle"
+  | "requestingResult"
+  | "spinning"
+  | "presentingWins"
+  | "recovering"
+  | "error"
+  | "disposed";
 
 type GameState = Readonly<{
   phase: Phase;
@@ -63,14 +69,14 @@ Example typed contract:
 
 ```ts
 type GameEvents = {
-  'spin.request': { requestId: string };
-  'spin.resultReceived': { spinId: string; result: SpinResult };
-  'spin.presentationRequested': { spinId: string; result: SpinResult };
-  'spin.presentationCompleted': { spinId: string };
-  'wins.presentationRequested': { spinId: string; wins: Win[] };
-  'wins.presentationCompleted': { spinId: string };
-  'presentation.failed': { spinId: string; stage: 'spin' | 'wins'; reason: string };
-  'game.phaseChanged': { phase: Phase };
+  "spin.request": { requestId: string };
+  "spin.resultReceived": { spinId: string; result: SpinResult };
+  "spin.presentationRequested": { spinId: string; result: SpinResult };
+  "spin.presentationCompleted": { spinId: string };
+  "wins.presentationRequested": { spinId: string; wins: Win[] };
+  "wins.presentationCompleted": { spinId: string };
+  "presentation.failed": { spinId: string; stage: "spin" | "wins"; reason: string };
+  "game.phaseChanged": { phase: Phase };
 };
 
 interface EventBus<E> {
@@ -102,17 +108,17 @@ Use a typed adapter over EventEmitter, rather than importing PixiJS directly int
 
 Implement a small explicit transition function (table or reducer) initially; use XState if nested bonus/free-spin modes or concurrency warrant it.
 
-| From | Trigger | To |
-|---|---|---|
-| booting | initialized | idle |
-| idle | valid spin.request | requestingResult |
-| requestingResult | server result | spinning |
-| requestingResult | request failed | error / idle |
-| spinning | spin.presentationCompleted | presentingWins / idle |
-| presentingWins | wins.presentationCompleted | idle |
-| spinning / presentingWins | presentation.failed | recovering |
-| recovering | final board rendered | idle |
-| any active phase | dispose | disposed |
+| From                      | Trigger                    | To                    |
+| ------------------------- | -------------------------- | --------------------- |
+| booting                   | initialized                | idle                  |
+| idle                      | valid spin.request         | requestingResult      |
+| requestingResult          | server result              | spinning              |
+| requestingResult          | request failed             | error / idle          |
+| spinning                  | spin.presentationCompleted | presentingWins / idle |
+| presentingWins            | wins.presentationCompleted | idle                  |
+| spinning / presentingWins | presentation.failed        | recovering            |
+| recovering                | final board rendered       | idle                  |
+| any active phase          | dispose                    | disposed              |
 
 Guards validate phase, spin ID, funds, and result. Invalid transitions must be rejected or logged, not silently applied. Bonus modes and autospin require their own explicit rules and must not be inferred from animation callbacks.
 

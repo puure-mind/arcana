@@ -1,0 +1,11 @@
+.next/
+.assetpack/
+node_modules/
+public/assets/
+public/math/
+raw-assets/
+.agents/docs/design/
+coverage/
+build/
+out/
+*.tsbuildinfo

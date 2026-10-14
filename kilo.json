@@ -7,12 +7,7 @@
     },
     "figma-remote": {
       "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "mcp-remote",
-        "https://mcp.figma.com/mcp"
-      ],
+      "command": ["npx", "-y", "mcp-remote", "https://mcp.figma.com/mcp"],
       "enabled": true
     }
   }

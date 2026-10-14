@@ -28,14 +28,14 @@ Terminology: **spin** = one resolved board; **base spin** = paid spin; **free sp
 
 ## 3. Symbols
 
-| Symbol | Role | Confirmed behavior |
-|---|---|---|
-| The Fool | Wild | Substitutes for ordinary symbols in clusters |
-| The Sun | Scatter | 3+ trigger exactly 10 Free Spins |
-| The Tower | Risk trigger | 3+ trigger mandatory Risk All if the spin has a positive award |
-| The Prophecy | Final multiplier trigger | 3+ trigger exactly one SDK-selected award: additive +×5 final multiplier OR 10 Free Spins |
-| ×2, ×5, ×20, ×50, ×100 | Local multiplier cards | Adjacent winning clusters receive their values; applicable values add |
-| Other tarot cards | Ordinary | Form clusters of 6+ matching symbols |
+| Symbol                 | Role                     | Confirmed behavior                                                                        |
+| ---------------------- | ------------------------ | ----------------------------------------------------------------------------------------- |
+| The Fool               | Wild                     | Substitutes for ordinary symbols in clusters                                              |
+| The Sun                | Scatter                  | 3+ trigger exactly 10 Free Spins                                                          |
+| The Tower              | Risk trigger             | 3+ trigger mandatory Risk All if the spin has a positive award                            |
+| The Prophecy           | Final multiplier trigger | 3+ trigger exactly one SDK-selected award: additive +×5 final multiplier OR 10 Free Spins |
+| ×2, ×5, ×20, ×50, ×100 | Local multiplier cards   | Adjacent winning clusters receive their values; applicable values add                     |
+| Other tarot cards      | Ordinary                 | Form clusters of 6+ matching symbols                                                      |
 
 For Sun, Tower, and Prophecy, **three or more** copies trigger the feature exactly once per spin; additional copies confer no additional spins, attempts, rewards, or multiplier. Special symbols do not count as ordinary cluster symbols unless explicitly stated. Local multiplier cards do not themselves substitute for ordinary symbols.
 
@@ -113,7 +113,7 @@ The adapter should normalize the math result to domain data sufficient for prese
 ```ts
 interface ResolvedSpin {
   spinId: string;
-  mode: 'base' | 'free';
+  mode: "base" | "free";
   stake: string; // decimal minor-unit strategy TBD
   board: readonly string[][]; // agree on row/column indexing
   clusters: readonly {
@@ -125,7 +125,10 @@ interface ResolvedSpin {
     localMultiplier: number;
     finalClusterAward: string;
   }[];
-  prophecy?: { cells: readonly { row: number; col: number }[]; reward: { type: "final_multiplier"; additiveValue: 5 } | { type: "free_spins"; count: 10 } };
+  prophecy?: {
+    cells: readonly { row: number; col: number }[];
+    reward: { type: "final_multiplier"; additiveValue: 5 } | { type: "free_spins"; count: 10 };
+  };
   totalAward: string;
   riskEligible: boolean;
   freeSpinsAwarded: number; // 0, 10, or 20 in a paid spin under confirmed rules
@@ -177,8 +180,8 @@ This is a **target application DTO**, not an asserted Stake Math SDK API. Actual
 1. **Risk All:** win/loss probability, authoritative side assignment, timeout/recovery and settlement contract (choice, one attempt, ×2/zero and mandatory participation are confirmed).
 2. **Clusters/Wild:** verify that SDK math can express non-paying all-Wild groups, shared Wild membership, and multiplier propagation through a shared Wild as specified.
 3. **Prophecy:** reward probabilities, initial final-multiplier baseline, and payout eligibility. Additive +5, at-least-three threshold with no extra award for 4+, and Free Spins queue behavior are confirmed.
-5. **Free Spins UX:** manual vs automatic advance; pause/resume; feature completion screen.
-6. **Stake Math SDK:** actual APIs, math configuration, server integration, return schemas, reproducibility and test fixtures.
-7. **Accounting:** currency/minor units, payout rounding, when the stake is debited, and how pending wins are settled.
+4. **Free Spins UX:** manual vs automatic advance; pause/resume; feature completion screen.
+5. **Stake Math SDK:** actual APIs, math configuration, server integration, return schemas, reproducibility and test fixtures.
+6. **Accounting:** currency/minor units, payout rounding, when the stake is debited, and how pending wins are settled.
 
 No open decision should be silently treated as approved by an implementation agent.

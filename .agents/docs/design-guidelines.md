@@ -17,21 +17,21 @@ Labels used in this document:
 - Main mobile frame: `mobile_main.png`, Figma frame `main`, `402 x 874`.
 - State exports:
 
-| State | Desktop source | Mobile source |
-|---|---|---|
-| Idle | `desktop_main.png` | `mobile_main.png` |
-| Win | `desktop_win.png` | Missing |
-| Wheel of Fortune | `desktop_wheel.png` | `mobile_wheel.png` |
-| Prophecy | `desktop_prophecy.png` | `mobile_prophecy.png` |
-| Prophecy Win | `desktop_prophecy_win.png` | Missing |
-| Risk All | `desktop_risk.png` | Missing |
-| Bet Settings | `desktop_settings.png` | Missing |
-| Onboarding | `desktop_onboarding_1.png` through `desktop_onboarding_5.png` | `mobile_onboarding_1.png` through `mobile_onboarding_5.png` |
-| Win Free Spins | `desktop_win_free_spins.png` | `mobile_win_free_spins.png` |
-| Big Win | `desktop_big_win.png` | `mobile_big_win.png` |
-| Mega Win | `desktop_mega_win.png` | Missing |
-| Paytable | `desktop_paytable.png` | `mobile_paytable.png` |
-| Loading | `loader.png` | `loader.png` |
+| State            | Desktop source                                                | Mobile source                                               |
+| ---------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
+| Idle             | `desktop_main.png`                                            | `mobile_main.png`                                           |
+| Win              | `desktop_win.png`                                             | Missing                                                     |
+| Wheel of Fortune | `desktop_wheel.png`                                           | `mobile_wheel.png`                                          |
+| Prophecy         | `desktop_prophecy.png`                                        | `mobile_prophecy.png`                                       |
+| Prophecy Win     | `desktop_prophecy_win.png`                                    | Missing                                                     |
+| Risk All         | `desktop_risk.png`                                            | Missing                                                     |
+| Bet Settings     | `desktop_settings.png`                                        | Missing                                                     |
+| Onboarding       | `desktop_onboarding_1.png` through `desktop_onboarding_5.png` | `mobile_onboarding_1.png` through `mobile_onboarding_5.png` |
+| Win Free Spins   | `desktop_win_free_spins.png`                                  | `mobile_win_free_spins.png`                                 |
+| Big Win          | `desktop_big_win.png`                                         | `mobile_big_win.png`                                        |
+| Mega Win         | `desktop_mega_win.png`                                        | Missing                                                     |
+| Paytable         | `desktop_paytable.png`                                        | `mobile_paytable.png`                                       |
+| Loading          | `loader.png`                                                  | `loader.png`                                                |
 
 - Gameplay behavior: `.agents/docs/game-rules.md`.
 - Rendering and ownership rules: `.agents/docs/architecture.md` and `AGENTS.md`.
@@ -126,13 +126,13 @@ Additional confirmed text colors:
 - Primary family: `Hanuman`.
 - Secondary family: `DM Serif Text`.
 
-| Usage | Family/style | Size | Weight | Line height | Letter spacing | Color |
-|---|---|---:|---:|---:|---:|---|
-| HUD labels | Hanuman Black | `14.28px` | `900` | `21px` | `0%` | `--total-win` |
-| HUD values | Hanuman Black | `18.54px` | `900` | `27px` | `0%` | `--total-win` |
-| Buttons | Hanuman Black | `20.37px` | `900` | `30px` | `0%` | `#fde182` |
-| Win labels | Hanuman SemiBold | `25.5px` | `600` | `37px` | `0%` | `--total-win` |
-| Modal/feature titles | DM Serif Text Regular | `32px` | `400` | `44px` | `0%` | `#be9665` |
+| Usage                | Family/style          |      Size | Weight | Line height | Letter spacing | Color         |
+| -------------------- | --------------------- | --------: | -----: | ----------: | -------------: | ------------- |
+| HUD labels           | Hanuman Black         | `14.28px` |  `900` |      `21px` |           `0%` | `--total-win` |
+| HUD values           | Hanuman Black         | `18.54px` |  `900` |      `27px` |           `0%` | `--total-win` |
+| Buttons              | Hanuman Black         | `20.37px` |  `900` |      `30px` |           `0%` | `#fde182`     |
+| Win labels           | Hanuman SemiBold      |  `25.5px` |  `600` |      `37px` |           `0%` | `--total-win` |
+| Modal/feature titles | DM Serif Text Regular |    `32px` |  `400` |      `44px` |           `0%` | `#be9665`     |
 
 ### Implementation Rule
 
@@ -197,22 +197,22 @@ All coordinates and dimensions below are Figma pixels relative to the named refe
 - Card radius is `0` in both main reference frames.
 - Symbol IDs supplied by design:
 
-| Game symbol | Asset ID |
-|---|---|
-| The Fool / Wild | `W` |
-| The Sun / Scatter | `Sun` |
-| The Tower / Risk trigger | `Tower` |
-| The Prophecy | `Prophecy` |
-| Swords | `swords` |
-| Cups | `cups` |
-| Star | `star` |
-| Pentagram | `pentagram` |
-| Wands | `wands` |
-| Multiplier x2 | `M2` |
-| Multiplier x5 | `M5` |
-| Multiplier x20 | `M20` |
-| Multiplier x50 | `M50` |
-| Multiplier x100 | `M100` |
+| Game symbol              | Asset ID    |
+| ------------------------ | ----------- |
+| The Fool / Wild          | `W`         |
+| The Sun / Scatter        | `Sun`       |
+| The Tower / Risk trigger | `Tower`     |
+| The Prophecy             | `Prophecy`  |
+| Swords                   | `swords`    |
+| Cups                     | `cups`      |
+| Star                     | `star`      |
+| Pentagram                | `pentagram` |
+| Wands                    | `wands`     |
+| Multiplier x2            | `M2`        |
+| Multiplier x5            | `M5`        |
+| Multiplier x20           | `M20`       |
+| Multiplier x50           | `M50`       |
+| Multiplier x100          | `M100`      |
 
 - Shared card-back asset: `card_back.png`.
 
@@ -309,18 +309,18 @@ All coordinates and dimensions below are Figma pixels relative to the named refe
 - Gameplay state and authoritative outcomes are independent of React, PixiJS, GSAP, and DOM APIs.
 - Confirmed UI assets:
 
-| Element | Asset |
-|---|---|
-| Main background | `bg_main.png` |
-| Board frame | `board_frame.png` |
-| Card back | `card_back.png` |
-| Spin button | `spin_button.png` |
-| Bet settings | `bet_settings.png` |
-| Balance panel | `panel.png` |
-| Win panel | `panel.png` |
-| Risk All left card | `card_back.png` |
-| Risk All right card | `card_back.png` |
-| Loader | `loader.png` |
+| Element             | Asset              |
+| ------------------- | ------------------ |
+| Main background     | `bg_main.png`      |
+| Board frame         | `board_frame.png`  |
+| Card back           | `card_back.png`    |
+| Spin button         | `spin_button.png`  |
+| Bet settings        | `bet_settings.png` |
+| Balance panel       | `panel.png`        |
+| Win panel           | `panel.png`        |
+| Risk All left card  | `card_back.png`    |
+| Risk All right card | `card_back.png`    |
+| Loader              | `loader.png`       |
 
 ### Inferred
 
@@ -336,21 +336,21 @@ All coordinates and dimensions below are Figma pixels relative to the named refe
 
 ## 10. Missing Designs & Open Questions
 
-| Element | What is missing | What must be clarified |
-|---|---|---|
-| Figma metadata | URL, node IDs, component variants, constraints | Keep PNG-only workflow or provide inspect metadata later |
-| Color semantics | Roles for Figma-generated names | Map raw names to semantic tokens |
-| Typography assets | Font files/loading source | Provide approved Hanuman and DM Serif Text sources |
-| Responsive policy | Breakpoint, intermediate aspect ratios, safe areas | Define layout-selection and crop/letterbox rules |
-| Mobile states | Win, Prophecy Win, Risk All, Bet Settings, Mega Win | Provide exports or confirm desktop-derived behavior |
-| Spinning | Static and motion representation | Provide approved spin/reel behavior |
-| Card states | Win/highlight/dim/disabled variants | Provide assets or effect values |
-| Risk All reveal | Fronts, winner/loser styling, settlement screen | Provide state exports and authoritative copy |
-| Free Spins active state | Counter, locked stake, active/complete states | Provide approved feature HUD and completion design |
-| Error/recovery | Error, retry, reconnect, restored session | Provide approved screens and copy |
-| Motion | Timings, easing, sequences, reduced motion | Provide motion specification; do not infer from PNGs |
-| Asset pipeline | Source paths, manifest, output conventions | Confirm AssetPack configuration |
-| HUD ownership | DOM versus Pixi per element | Decide based on accessibility and animation needs |
+| Element                 | What is missing                                     | What must be clarified                                   |
+| ----------------------- | --------------------------------------------------- | -------------------------------------------------------- |
+| Figma metadata          | URL, node IDs, component variants, constraints      | Keep PNG-only workflow or provide inspect metadata later |
+| Color semantics         | Roles for Figma-generated names                     | Map raw names to semantic tokens                         |
+| Typography assets       | Font files/loading source                           | Provide approved Hanuman and DM Serif Text sources       |
+| Responsive policy       | Breakpoint, intermediate aspect ratios, safe areas  | Define layout-selection and crop/letterbox rules         |
+| Mobile states           | Win, Prophecy Win, Risk All, Bet Settings, Mega Win | Provide exports or confirm desktop-derived behavior      |
+| Spinning                | Static and motion representation                    | Provide approved spin/reel behavior                      |
+| Card states             | Win/highlight/dim/disabled variants                 | Provide assets or effect values                          |
+| Risk All reveal         | Fronts, winner/loser styling, settlement screen     | Provide state exports and authoritative copy             |
+| Free Spins active state | Counter, locked stake, active/complete states       | Provide approved feature HUD and completion design       |
+| Error/recovery          | Error, retry, reconnect, restored session           | Provide approved screens and copy                        |
+| Motion                  | Timings, easing, sequences, reduced motion          | Provide motion specification; do not infer from PNGs     |
+| Asset pipeline          | Source paths, manifest, output conventions          | Confirm AssetPack configuration                          |
+| HUD ownership           | DOM versus Pixi per element                         | Decide based on accessibility and animation needs        |
 
 ## Verification Notes
 
