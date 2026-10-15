@@ -1,0 +1,279 @@
+:root {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  color: #f2f2f2;
+  background: #050505;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+button,
+select {
+  font: inherit;
+}
+
+.game-shell {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: clamp(10px, 1.6vh, 18px);
+  padding: clamp(10px, 2vw, 24px);
+  background: #050505;
+}
+
+.main-stage,
+.control-deck {
+  width: 0 auto;
+  margin: 0 auto;
+}
+
+.main-stage {
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+.board-shell {
+  position: relative;
+  width: min(760px, 100%);
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+}
+
+.reel-frame {
+  width: min(700px, calc((100dvh - 128px) * 0.98), 84vw);
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(6px, 0.9vw, 11px);
+  padding: 0px;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  background: #0d0d0d;
+}
+
+.reel {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  gap: clamp(6px, 0.9vw, 11px);
+}
+
+.symbol {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid #3f3f3f;
+  border-radius: 8px;
+  background: #151515;
+  color: #f2f2f2;
+  overflow: hidden;
+}
+
+.symbol span {
+  max-width: 100%;
+  padding: 0 5px;
+  overflow-wrap: anywhere;
+  font-size: clamp(0.56rem, 1vw, 0.95rem);
+  font-weight: 850;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.symbol-special {
+  background: #1d1d1d;
+}
+
+.symbol.highlighted,
+.symbol.scatter-cue {
+  border-color: #f2f2f2;
+  box-shadow: inset 0 0 0 2px #f2f2f2;
+}
+
+.symbol.vertical-wild-cell {
+  background: #222222;
+  border-color: #d0d0d0;
+}
+
+.chase-stack {
+  position: absolute;
+  top: 50%;
+  right: max(-104px, calc((100vw - min(1220px, 100vw)) / -2));
+  width: 92px;
+  display: grid;
+  gap: 8px;
+  transform: translateY(-50%);
+}
+
+.chase-badge {
+  min-height: 74px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  background: #111111;
+}
+
+.chase-badge span,
+.stat span,
+.state-picker span {
+  color: #b8b8b8;
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.chase-badge strong {
+  color: #f2f2f2;
+  font-size: clamp(1.4rem, 2.4vw, 2.2rem);
+  line-height: 0.96;
+}
+
+.chase-level-2 {
+  box-shadow: inset 0 0 0 2px #777777;
+}
+
+.chase-level-3 {
+  box-shadow: inset 0 0 0 2px #a0a0a0;
+}
+
+.control-deck {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(96px, 1fr)) minmax(132px, 170px);
+  gap: 12px;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.stat,
+.state-picker {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.stat strong {
+  color: #f2f2f2;
+  font-size: clamp(1rem, 1.55vw, 1.28rem);
+}
+
+.state-picker select,
+.spin-button {
+  min-height: 48px;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+}
+
+.state-picker select {
+  width: 100%;
+  background: #101010;
+  color: #f2f2f2;
+  padding: 0 12px;
+}
+
+.spin-button {
+  cursor: pointer;
+  background: #f2f2f2;
+  color: #050505;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.spin-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+@media (min-width: 900px) {
+  .control-deck:has(.state-picker) {
+    grid-template-columns: repeat(3, minmax(96px, 1fr)) minmax(190px, 250px) minmax(132px, 170px);
+  }
+}
+
+@media (max-width: 980px) {
+  .chase-stack {
+    position: static;
+    width: min(320px, 100%);
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(92px, 1fr);
+    margin-top: 10px;
+    transform: none;
+  }
+}
+
+@media (max-aspect-ratio: 1 / 1) {
+  html,
+  body,
+  #app {
+    min-height: 100%;
+    height: auto;
+    overflow: auto;
+  }
+
+  .game-shell {
+    min-height: 100dvh;
+    height: auto;
+    overflow: visible;
+  }
+
+  .main-stage {
+    align-items: start;
+  }
+
+  .board-shell {
+    width: 100%;
+  }
+
+  .reel-frame {
+    width: min(100%, calc(100vw - 34px));
+  }
+
+  .control-deck {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .state-picker,
+  .spin-button {
+    grid-column: span 3;
+  }
+}
+
+@media (max-width: 460px) {
+  .game-shell {
+    gap: 9px;
+    padding: 9px;
+  }
+
+  .symbol span {
+    font-size: clamp(0.48rem, 2vw, 0.72rem);
+  }
+}
